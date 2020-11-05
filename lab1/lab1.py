@@ -1,39 +1,38 @@
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.layers import Input, Conv2D, MaxPool2D, Dropout, Flatten, Dense
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.layers import Flatten
-from  tensorflow.keras.datasets import mnist
 
+# Загружаем данные из keras.mnist
+mnist = tf.keras.datasets.mnist
+# Разделяем данные на обучающие и тестовые
+(feature_train, label_train), (feature_test, label_test) = mnist.load_data()
 
-def firstTask():
-    # Задаем размерность
-    imgRows, imgCols = 28, 28
+# Нормировка данных изображений
+feature_train, feature_test = feature_train / 255, feature_test / 255
+feature_train, feature_test = np.expand_dims(feature_train, axis=-1), np.expand_dims(feature_test, axis=-1)
 
-    # Загружаем разделенные данные из kears.mnist
-    (feature_train, label_train), (feature_test, label_test) = mnist.load_data()
-    print("Размер тренировачных данных - ", len(feature_train))
-    print("Размер тестовых данных - ", len(feature_train))
+# Инициализируем модель
+model = Sequential()
 
-    # Нормировка данных изображений
-    feature_train = feature_train / 255
-    feature_test = feature_test / 255
+# Создаем слои
+model.add(Input(shape=(28, 28, 1)))
+model.add(Conv2D(32, (3, 3), padding="valid", activation=tf.nn.relu))
+model.add(MaxPool2D((2, 2), (2, 2)))
+model.add(Dropout(0.5))
+model.add(Conv2D(64, (3, 3), padding="valid", activation=tf.nn.relu))
+model.add(MaxPool2D((2, 2), (2, 2)))
+model.add(Dropout(0.5))
+model.add(Conv2D(128, (3, 3), padding="valid", activation=tf.nn.relu))
+model.add(Flatten())
+model.add(Dense(10, activation=tf.nn.softmax))
 
-    # Инициализируем нейронную сеть
-    model = Sequential()
+# Компилируем модель
+model.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
 
-    # Добавляем и настраиваем слои
-    model.add(Flatten(input_shape=(imgRows, imgCols)))  # Создаем входной слой равный размерности изображения (28 * 28 = 784)
-    model.add(Dense(128, activation="relu"))  # Добавляем скрытый слой
-    model.add(Dense(10, activation="softmax"))  # Добавляем выходной слой на 10 нейронов = количеству типов цифр [0-9]
+# Обучаем модель
+model.fit(feature_train, label_train, epochs=5)
 
-    # Компилируем модель
-    model.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
-
-    # Обучаем модель
-    model.fit(feature_train, label_train, epochs=5)
-
-    # Тестирование модели методами keras
-    testLoss, testAccuracy = model.evaluate(feature_test, label_test)
-    print("Точность  = ", testAccuracy)
-
-
-firstTask()
+# Тестируем модель и выводим результаты
+testLoss, testAccuracy = model.evaluate(feature_test, label_test)
+print(f'Accuracy on TEST_data = {testAccuracy}')
